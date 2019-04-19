@@ -24,6 +24,7 @@ public class OrderAggregate {
 
 	@AggregateIdentifier
 	private String orderId;
+	private int amount;
 	private boolean orderConfirmed;
 	private boolean orderShipped;
 
