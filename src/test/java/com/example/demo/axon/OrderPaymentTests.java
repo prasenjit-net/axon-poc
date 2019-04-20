@@ -30,7 +30,7 @@ public class OrderPaymentTests {
                 .expectEvents(new CreateAccountEvent(accountId, 100));
 
         String product = "Deluxe Chair";
-        orderFixture.givenNoPriorActivity().when(new PlaceOrderCommand(orderId, product, accountId))
-                .expectEvents(new OrderPlacedEvent(orderId, product, accountId));
+        orderFixture.givenNoPriorActivity().when(new PlaceOrderCommand(orderId, product, accountId, 100))
+                .expectEvents(new OrderPlacedEvent(orderId, product, accountId, 100));
     }
 }

@@ -5,11 +5,12 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.spring.stereotype.Aggregate;
-import org.jboss.aerogear.security.otp.api.Base32;
 
+import com.example.demo.axon.command.AssociateAccountCommand;
 import com.example.demo.axon.command.ConfirmOrderCommand;
 import com.example.demo.axon.command.PlaceOrderCommand;
 import com.example.demo.axon.command.ShipOrderCommand;
+import com.example.demo.axon.event.AccountAssociatedEvent;
 import com.example.demo.axon.event.OrderConfirmedEvent;
 import com.example.demo.axon.event.OrderPlacedEvent;
 import com.example.demo.axon.event.OrderShippedEvent;
@@ -20,23 +21,27 @@ import lombok.Data;
 @Aggregate
 public class OrderAggregate {
 
-	public static String QR_PREFIX = "https://chart.googleapis.com/chart?chs=200x200&chld=M%%7C0&cht=qr&chl=";
+	//public static String QR_PREFIX = "https://chart.googleapis.com/chart?chs=200x200&chld=M%%7C0&cht=qr&chl=";
 
 	@AggregateIdentifier
 	private String orderId;
-	private int amount;
+	private String accountId;
 	private boolean orderConfirmed;
 	private boolean orderShipped;
+	private int amount;
 
 	@CommandHandler
 	public OrderAggregate(PlaceOrderCommand command) {
-		AggregateLifecycle.apply(new OrderPlacedEvent(command.getOrderId(), command.getProduct(), Base32.random()));
+		AggregateLifecycle.apply(new OrderPlacedEvent(command.getOrderId(), command.getProduct(),
+				command.getAccountId(), command.getPrice()));
 	}
 
 	@EventSourcingHandler
 	public void on(OrderPlacedEvent event) {
 		this.orderId = event.getOrderId();
-		orderConfirmed = false;
+		this.orderConfirmed = false;
+		this.amount = event.getAmount();
+		this.accountId = event.getAccountId();
 	}
 
 	@CommandHandler
@@ -60,6 +65,16 @@ public class OrderAggregate {
 	@EventSourcingHandler
 	public void on(OrderShippedEvent event) {
 		orderShipped = true;
+	}
+
+	@CommandHandler
+	public void handle(AssociateAccountCommand command) {
+		AggregateLifecycle.apply(new AccountAssociatedEvent(command.getOrderId(), command.getAccountId()));
+	}
+
+	@EventSourcingHandler
+	public void on(AccountAssociatedEvent event) {
+		this.accountId = event.getAccountId();
 	}
 
 	protected OrderAggregate() {

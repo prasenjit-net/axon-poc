@@ -10,6 +10,7 @@ import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.axon.event.OrderPlacedEvent;
+import com.example.demo.axon.query.AccountBalanceQuery;
 import com.example.demo.axon.query.FindAllOrderedProductsQuery;
 import com.example.demo.axon.query.OrderedProduct;
 
@@ -28,6 +29,11 @@ public class OrderedProductsEventHandler {
 
 	@QueryHandler
 	public List<OrderedProduct> handle(FindAllOrderedProductsQuery query) {
+		return new ArrayList<>(orderedProducts.values());
+	}
+
+	@QueryHandler
+	public List<OrderedProduct> handle(AccountBalanceQuery query) {
 		return new ArrayList<>(orderedProducts.values());
 	}
 }

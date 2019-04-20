@@ -3,9 +3,7 @@ package com.example.demo.axon.event;
 import lombok.Data;
 
 @Data
-public class OrderPlacedEvent {
+public class AccountAssociatedEvent {
 	private final String orderId;
-	private final String product;
 	private final String accountId;
-	private final int amount;
 }

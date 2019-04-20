@@ -5,10 +5,8 @@ import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import lombok.Data;
 
 @Data
-public class PlaceOrderCommand {
+public class CreateAccountCommand {
 	@TargetAggregateIdentifier
-	private final String orderId;
-	private final String product;
 	private final String accountId;
-	private final int price;
+	private final int amount;
 }

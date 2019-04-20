@@ -4,21 +4,17 @@ import java.util.List;
 import java.util.UUID;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.spring.config.AxonConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.axon.aggregate.OrderAggregate;
-import com.example.demo.axon.command.ConfirmOrderCommand;
+import com.example.demo.axon.command.DepositCommand;
 import com.example.demo.axon.command.PlaceOrderCommand;
-import com.example.demo.axon.command.ShipOrderCommand;
 import com.example.demo.axon.query.FindAllOrderedProductsQuery;
+import com.example.demo.axon.query.OrderDetailsQuery;
+import com.example.demo.axon.query.OrderDetailsQuery.Result;
 import com.example.demo.axon.query.OrderedProduct;
 
 import lombok.RequiredArgsConstructor;
@@ -29,21 +25,29 @@ public class OrderRestEndpoint {
 
 	private final CommandGateway commandGateway;
 	private final QueryGateway queryGateway;
-	private final AxonConfiguration configuration;
 
 	@GetMapping("/ship-order")
-	@Transactional
-	public void shipOrder() {
+	public String shipOrder() {
 		String orderId = UUID.randomUUID().toString();
-		commandGateway.send(new PlaceOrderCommand(orderId, "Deluxe Chair", ""));//TODO
+		Object sendAndWait = commandGateway.sendAndWait(new PlaceOrderCommand(orderId, "Deluxe Chair", "", 100));
+		System.out.println(sendAndWait);
 
-		DefaultUnitOfWork<Message<?>> startAndGet = DefaultUnitOfWork.startAndGet(null);
-		Aggregate<OrderAggregate> load = configuration.repository(OrderAggregate.class).load(orderId);
-		load.execute(a -> System.out.println(a.getOrderId()));
-		startAndGet.rollback();
+		return orderId;
+	}
 
-		commandGateway.send(new ConfirmOrderCommand(orderId));
-		commandGateway.send(new ShipOrderCommand(orderId));
+	@GetMapping("/pay-order")
+	public Result payOrder(@RequestParam String orderId) {
+		Result orderDetails = queryGateway.query(new OrderDetailsQuery(orderId), OrderDetailsQuery.Result.class).join();
+
+		if (!orderDetails.isConfirmed()) {
+			String accountId = orderDetails.getAccountId();
+			DepositCommand deposit = new DepositCommand(accountId, 50);
+			commandGateway.sendAndWait(deposit);
+			deposit = new DepositCommand(accountId, 150);
+			commandGateway.sendAndWait(deposit);
+		}
+
+		return orderDetails;
 	}
 
 	@GetMapping("/all-orders")
